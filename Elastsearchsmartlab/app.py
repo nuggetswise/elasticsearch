@@ -44,6 +44,10 @@ hybrid_weight = st.sidebar.slider(
 st.sidebar.markdown("---")
 st.sidebar.markdown("**📁 Your Data (Optional)**")
 st.sidebar.markdown("Upload your own documents to test search on your content:")
+
+# Initialize user_docs variable
+user_docs = None
+
 uploaded = st.sidebar.file_uploader(
     "Upload JSON document set (<1MB)", 
     type=["json"],
@@ -125,7 +129,7 @@ if query:
     
     from utils.llm import explain_retrieval_strategy_stream
     with st.spinner("🔍 Searching and ranking documents..."):
-        results_display(query, filters=None, hybrid_weight=hybrid_weight, user_docs=user_docs)
+        results_display(query, filters=None, hybrid_weight=hybrid_weight, user_docs=all_docs)
     
     if explain:
         st.markdown("---")
