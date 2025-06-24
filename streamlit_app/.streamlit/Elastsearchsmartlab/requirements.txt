@@ -1,0 +1,6 @@
+streamlit
+sentence-transformers
+numpy
+openai
+cohere
+rank_bm25
