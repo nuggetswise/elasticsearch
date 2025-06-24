@@ -1,5 +1,0 @@
-streamlit
-openai
-sentence-transformers
-numpy
-PyPDF2

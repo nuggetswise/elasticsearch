@@ -1,9 +1,0 @@
-streamlit
-sentence-transformers
-numpy
-openai
-cohere
-rank_bm25
-lunr
-requests
-google-generativeai

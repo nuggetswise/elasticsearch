@@ -59,5 +59,12 @@ if query:
     if explain:
         st.markdown("---")
         st.markdown("**How LLM is used (streaming):**")
+        
+        # Fix: Buffer the LLM output for proper formatting
+        explanation_text = ""
+        explanation_placeholder = st.empty()
+        
         for chunk in explain_retrieval_strategy_stream("Comparison"):
-            st.write(chunk)
+            explanation_text += chunk
+            # Update the placeholder with the accumulated text
+            explanation_placeholder.markdown(explanation_text)

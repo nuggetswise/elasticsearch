@@ -4,6 +4,7 @@ import streamlit as st
 from utils.dummy_docs import DOCS
 from rank_bm25 import BM25Okapi
 import os
+import logging
 
 @st.cache_resource
 def get_model():
@@ -67,30 +68,40 @@ def get_semantic_scores(query, docs):
     return scores
 
 def get_llm_scores(query, docs):
-    import openai
+    import logging
     scores = []
-    # Try OpenAI
+    errors = []
+    # Try OpenAI (new API)
     try:
+        import openai
         api_key = st.secrets.get("openai_api_key", None) or os.environ.get("OPENAI_API_KEY") or os.environ.get("openai_api_key")
         if api_key:
-            openai.api_key = api_key
+            client = openai.OpenAI(api_key=api_key)
             for doc in docs:
                 prompt = f"Given the query: '{query}', rate the relevance of the following document (0-1):\nTitle: {doc['title']}\nSnippet: {doc['snippet']}"
                 try:
-                    response = openai.ChatCompletion.create(
+                    response = client.chat.completions.create(
                         model="gpt-4",
                         messages=[{"role": "user", "content": prompt}],
                         max_tokens=10,
                         temperature=0.0,
+                        stream=False
                     )
-                    text = response["choices"][0]["message"]["content"].strip()
-                    score = float(text.split()[0]) if text.split() else 0.0
-                except Exception:
+                    text = response.choices[0].message.content.strip()
+                    try:
+                        score = float(text.split()[0]) if text.split() else 0.0
+                    except Exception as e:
+                        logging.error(f"OpenAI LLM returned non-numeric score: '{text}'. Error: {e}")
+                        score = 0.0
+                except Exception as e:
+                    logging.error(f"OpenAI LLM error: {e}")
+                    errors.append(f"[OpenAI error: {e}]")
                     score = 0.0
                 scores.append(score)
             return np.array(scores)
-    except Exception:
-        pass
+    except Exception as e:
+        logging.error(f"OpenAI LLM outer error: {e}")
+        errors.append(f"[OpenAI outer error: {e}]")
     # Try Cohere
     try:
         import cohere
@@ -107,13 +118,20 @@ def get_llm_scores(query, docs):
                         temperature=0.0,
                     )
                     text = resp.generations[0].text.strip()
-                    score = float(text.split()[0]) if text.split() else 0.0
-                except Exception:
+                    try:
+                        score = float(text.split()[0]) if text.split() else 0.0
+                    except Exception as e:
+                        logging.error(f"Cohere LLM returned non-numeric score: '{text}'. Error: {e}")
+                        score = 0.0
+                except Exception as e:
+                    logging.error(f"Cohere LLM error: {e}")
+                    errors.append(f"[Cohere error: {e}]")
                     score = 0.0
                 scores.append(score)
             return np.array(scores)
-    except Exception:
-        pass
+    except Exception as e:
+        logging.error(f"Cohere LLM outer error: {e}")
+        errors.append(f"[Cohere outer error: {e}]")
     # Try Groq
     try:
         import requests
@@ -134,13 +152,20 @@ def get_llm_scores(query, docs):
                         timeout=10
                     )
                     text = response.json()["choices"][0]["message"]["content"].strip()
-                    score = float(text.split()[0]) if text.split() else 0.0
-                except Exception:
+                    try:
+                        score = float(text.split()[0]) if text.split() else 0.0
+                    except Exception as e:
+                        logging.error(f"Groq LLM returned non-numeric score: '{text}'. Error: {e}")
+                        score = 0.0
+                except Exception as e:
+                    logging.error(f"Groq LLM error: {e}")
+                    errors.append(f"[Groq error: {e}]")
                     score = 0.0
                 scores.append(score)
             return np.array(scores)
-    except Exception:
-        pass
+    except Exception as e:
+        logging.error(f"Groq LLM outer error: {e}")
+        errors.append(f"[Groq outer error: {e}]")
     # Try Gemini
     try:
         import google.generativeai as genai
@@ -153,14 +178,24 @@ def get_llm_scores(query, docs):
                 try:
                     resp = model.generate_content(prompt)
                     text = resp.text.strip()
-                    score = float(text.split()[0]) if text.split() else 0.0
-                except Exception:
+                    try:
+                        score = float(text.split()[0]) if text.split() else 0.0
+                    except Exception as e:
+                        logging.error(f"Gemini LLM returned non-numeric score: '{text}'. Error: {e}")
+                        score = 0.0
+                except Exception as e:
+                    logging.error(f"Gemini LLM error: {e}")
+                    errors.append(f"[Gemini error: {e}]")
                     score = 0.0
                 scores.append(score)
             return np.array(scores)
-    except Exception:
-        pass
-    # If all fail, return zeros
+    except Exception as e:
+        logging.error(f"Gemini LLM outer error: {e}")
+        errors.append(f"[Gemini outer error: {e}]")
+    # If all fail, log and return zeros
+    if errors:
+        for err in errors:
+            logging.error(err)
     return np.zeros(len(docs))
 
 def get_simulated_results(query, mode, filters=None, hybrid_weight=0.6, user_docs=None):
