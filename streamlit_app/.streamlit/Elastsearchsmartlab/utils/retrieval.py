@@ -3,6 +3,7 @@ from sentence_transformers import SentenceTransformer
 import streamlit as st
 from utils.dummy_docs import DOCS
 from rank_bm25 import BM25Okapi
+import os
 
 @st.cache_resource
 def get_model():
@@ -46,7 +47,7 @@ def get_semantic_scores(query, docs):
     # Try Cohere embeddings first, fallback to sentence-transformers
     try:
         import cohere
-        cohere_key = st.secrets["cohere_api_key"]
+        cohere_key = st.secrets.get("cohere_api_key", None) or os.environ.get("COHERE_API_KEY") or os.environ.get("cohere_api_key")
         if cohere_key:
             co = cohere.Client(cohere_key)
             texts = [doc["title"] for doc in docs]
@@ -70,7 +71,7 @@ def get_llm_scores(query, docs):
     scores = []
     # Try OpenAI
     try:
-        api_key = st.secrets["openai_api_key"]
+        api_key = st.secrets.get("openai_api_key", None) or os.environ.get("OPENAI_API_KEY") or os.environ.get("openai_api_key")
         if api_key:
             openai.api_key = api_key
             for doc in docs:
@@ -93,7 +94,7 @@ def get_llm_scores(query, docs):
     # Try Cohere
     try:
         import cohere
-        cohere_key = st.secrets["cohere_api_key"]
+        cohere_key = st.secrets.get("cohere_api_key", None) or os.environ.get("COHERE_API_KEY") or os.environ.get("cohere_api_key")
         if cohere_key:
             co = cohere.Client(cohere_key)
             for doc in docs:
@@ -116,7 +117,7 @@ def get_llm_scores(query, docs):
     # Try Groq
     try:
         import requests
-        groq_key = st.secrets["groq_api_key"]
+        groq_key = st.secrets.get("groq_api_key", None) or os.environ.get("GROQ_API_KEY") or os.environ.get("groq_api_key")
         if groq_key:
             for doc in docs:
                 prompt = f"Given the query: '{query}', rate the relevance of the following document (0-1):\nTitle: {doc['title']}\nSnippet: {doc['snippet']}"
@@ -143,7 +144,7 @@ def get_llm_scores(query, docs):
     # Try Gemini
     try:
         import google.generativeai as genai
-        gemini_key = st.secrets["gemini_api_key"]
+        gemini_key = st.secrets.get("gemini_api_key", None) or os.environ.get("GEMINI_API_KEY") or os.environ.get("gemini_api_key")
         if gemini_key:
             genai.configure(api_key=gemini_key)
             model = genai.GenerativeModel('gemini-pro')
