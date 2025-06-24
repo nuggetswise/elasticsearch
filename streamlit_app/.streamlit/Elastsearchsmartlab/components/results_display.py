@@ -8,7 +8,10 @@ def results_display(query, filters=None, hybrid_weight=0.6, user_docs=None):
         with cols[idx]:
             st.markdown(f"#### {m}")
             results = get_simulated_results(query, m, filters=filters, hybrid_weight=hybrid_weight, user_docs=user_docs)
+            # Always show at least 1 result, even if below threshold
             filtered_results = [r for r in results if r['score'] >= 0.30]
+            if not filtered_results and results:
+                filtered_results = [results[0]]
             if not filtered_results:
                 st.info("No results.")
                 continue
