@@ -35,6 +35,19 @@ st.sidebar.download_button(
     mime="application/json"
 )
 
+# --- Sample search queries ---
+st.sidebar.markdown('---')
+st.sidebar.markdown('**Sample Search Queries**')
+sample_queries = [
+    "elasticsearch performance",
+    "bm25 ranking",
+    "semantic vector search",
+    "hybrid retrieval",
+    "scaling search systems"
+]
+for q in sample_queries:
+    st.sidebar.code(q)
+
 # --- Main UI ---
 query = query_input()
 explain = explain_toggle()
