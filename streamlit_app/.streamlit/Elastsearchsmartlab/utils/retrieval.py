@@ -32,7 +32,11 @@ def get_semantic_scores(query, docs):
 
 def get_llm_scores(query, docs):
     import openai
-    openai.api_key = st.secrets["openai_api_key"]
+    api_key = st.secrets.get("openai_api_key", None)
+    if not api_key:
+        # If no API key, return zeros for all docs and skip LLM scoring
+        return np.zeros(len(docs))
+    openai.api_key = api_key
     scores = []
     for doc in docs:
         prompt = f"Given the query: '{query}', rate the relevance of the following document (0-1):\nTitle: {doc['title']}\nSnippet: {doc['snippet']}"
