@@ -1,0 +1,11 @@
+[server]
+# Disable file watching to prevent cache file errors
+fileWatcherType = "none"
+
+[client]
+# Disable caching issues
+caching = false
+
+[browser]
+# Disable browser auto-open
+gatherUsageStats = false 
